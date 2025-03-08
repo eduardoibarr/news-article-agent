@@ -1,0 +1,14 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": [
+    "data",
+    "data/*",
+    "data/**/*",
+    "node_modules/*",
+    "*.faiss",
+    "*.pkl"
+  ],
+  "exec": "ts-node src/index.ts",
+  "verbose": true
+}

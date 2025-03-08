@@ -3,20 +3,21 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "nodemon --exec ts-node src/index.ts",
+    "dev": "nodemon",
+    "prebuild": "mkdir -p dist",
     "build": "tsc",
+    "prestart": "mkdir -p data",
     "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-api": "node scripts/test-api.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "API with Langchain and Pinecone for similarity search",
+  "description": "API with Langchain and FAISS for similarity search",
   "dependencies": {
     "@langchain/community": "^0.3.34",
     "@langchain/openai": "^0.4.4",
-    "@langchain/pinecone": "^0.2.0",
-    "@pinecone-database/pinecone": "^5.1.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/uuid": "^10.0.0",
@@ -26,10 +27,13 @@
     "csv-parser": "^3.2.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "faiss-node": "^0.5.1",
     "kafkajs": "^2.2.4",
     "langchain": "^0.3.19",
     "openai": "^4.86.2",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
