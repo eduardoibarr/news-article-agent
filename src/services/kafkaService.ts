@@ -193,6 +193,7 @@ export async function processArticle(url: string): Promise<void> {
 
           const currentDate = new Date().toISOString().split("T")[0];
           const cleanedArticle: CleanedArticle = {
+            id: uuidv4(),
             title: `Article from ${hostname}`,
             content: `This article from ${url} could not be accessed directly. The content was not available for processing due to website restrictions.`,
             url: url,
@@ -211,7 +212,7 @@ export async function processArticle(url: string): Promise<void> {
 
       let cleanedArticle;
       try {
-        cleanedArticle = await cleanAndStructureContent(url, textContent);
+        cleanedArticle = await cleanAndStructureContent(textContent, url);
       } catch (nlpError) {
         logError(
           "Article NLP",
@@ -223,6 +224,7 @@ export async function processArticle(url: string): Promise<void> {
         const title = titleMatch ? titleMatch[1] : `Article from ${hostname}`;
 
         cleanedArticle = {
+          id: uuidv4(),
           title: title,
           content: textContent.substring(0, 5000),
           url: url,

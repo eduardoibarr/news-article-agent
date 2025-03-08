@@ -9,6 +9,7 @@ import { processArticlesFromCsv } from "./services/csvService";
 import { setupDataDirectory } from "./utils/setupData";
 import requestLogger from "./middleware/requestLogger";
 import logger, { logServer, logError, logDB, logKafka } from "./utils/logger";
+import { createYogaServer } from "./graphql/server";
 
 async function startServer() {
   const app = express();
@@ -18,6 +19,9 @@ async function startServer() {
   app.use(requestLogger);
 
   app.use("/agent", agentRoutes);
+
+  const yogaServer = createYogaServer();
+  app.use("/graphql", yogaServer);
 
   app.get("/health", (req, res) => {
     res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
@@ -37,7 +41,9 @@ async function startServer() {
   app.listen(PORT, () => {
     logServer(`Server is running on port ${PORT}`);
     logServer(`Health check: http://localhost:${PORT}/health`);
-    logServer(`API endpoint: http://localhost:${PORT}/agent`);
+    logServer(`REST API endpoint: http://localhost:${PORT}/agent`);
+    logServer(`GraphQL endpoint: http://localhost:${PORT}/graphql`);
+    logServer(`GraphQL playground: http://localhost:${PORT}/graphql`);
   });
 
   try {

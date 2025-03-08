@@ -16,6 +16,9 @@
   "license": "ISC",
   "description": "API with Langchain and FAISS for similarity search",
   "dependencies": {
+    "@envelop/core": "^3.0.6",
+    "@graphql-tools/schema": "^10.0.3",
+    "@graphql-yoga/node": "^3.9.1",
     "@langchain/community": "^0.3.34",
     "@langchain/openai": "^0.4.4",
     "@types/cors": "^2.8.17",
@@ -28,6 +31,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "faiss-node": "^0.5.1",
+    "graphql": "^16.8.1",
+    "graphql-yoga": "^5.1.1",
     "kafkajs": "^2.2.4",
     "langchain": "^0.3.19",
     "openai": "^4.86.2",

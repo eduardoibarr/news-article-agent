@@ -3,6 +3,7 @@ import { Document } from "@langchain/core/documents";
 import { FaissStore } from "@langchain/community/vectorstores/faiss";
 import * as fs from "fs";
 import * as path from "path";
+import { v4 as uuidv4 } from "uuid";
 import { config } from "../config/env";
 import { CleanedArticle, Source } from "../models/article";
 import { logDB, logError } from "../utils/logger";
@@ -67,6 +68,21 @@ export async function storeArticle(article: CleanedArticle): Promise<void> {
   }
 }
 
+export async function addArticleToVectorDB(article: any): Promise<void> {
+  const cleanedArticle: CleanedArticle = {
+    id: article.id,
+    url: article.url,
+    title: article.title,
+    content: article.content,
+    summary: article.summary,
+    publishedAt: article.publishedAt,
+    source: article.source,
+    createdAt: article.createdAt,
+  };
+
+  await storeArticle(cleanedArticle);
+}
+
 export async function queryVectorDB(
   query: string,
   numResults: number = 3
@@ -79,9 +95,14 @@ export async function queryVectorDB(
     const results = await vectorStore!.similaritySearch(query, numResults);
 
     const sources: Source[] = results.map((doc) => ({
+      id: doc.metadata.id || doc.metadata.url || uuidv4(),
       title: doc.metadata.title || "Unknown Title",
       url: doc.metadata.url || "",
       date: doc.metadata.date || "",
+      content: doc.pageContent,
+      source: doc.metadata.source,
+      publishedAt: doc.metadata.publishedAt,
+      createdAt: doc.metadata.createdAt,
     }));
 
     return { docs: results, sources };
@@ -90,4 +111,58 @@ export async function queryVectorDB(
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to query vector database: ${errorMessage}`);
   }
+}
+
+export async function searchArticles(
+  term: string,
+  limit: number = 10
+): Promise<any[]> {
+  if (!vectorStore) {
+    await initVectorDB();
+  }
+
+  if (!vectorStore) {
+    throw new Error("Vector store not initialized");
+  }
+
+  const results = await queryVectorDB(term, limit);
+
+  return results.sources.map((source) => ({
+    id: source.id,
+    url: source.url,
+    title: source.title || "Unknown",
+    content: source.content || "",
+    summary: source.summary || "",
+    source: source.source || new URL(source.url).hostname,
+    publishedAt: source.publishedAt || new Date().toISOString(),
+    createdAt: source.createdAt || new Date().toISOString(),
+  }));
+}
+
+export async function getArticleById(id: string): Promise<any | null> {
+  if (!vectorStore) {
+    await initVectorDB();
+  }
+
+  if (!vectorStore) {
+    throw new Error("Vector store not initialized");
+  }
+
+  const results = await vectorStore.similaritySearch("", 100);
+  const article = results.find((doc) => doc.metadata.id === id);
+
+  if (!article) {
+    return null;
+  }
+
+  return {
+    id: article.metadata.id,
+    url: article.metadata.url,
+    title: article.metadata.title || "Unknown",
+    content: article.pageContent,
+    summary: article.metadata.summary || "",
+    source: article.metadata.source || new URL(article.metadata.url).hostname,
+    publishedAt: article.metadata.publishedAt || new Date().toISOString(),
+    createdAt: article.metadata.createdAt || new Date().toISOString(),
+  };
 }

@@ -6,16 +6,27 @@ export interface RawArticle {
 }
 
 export interface CleanedArticle {
+  id: string;
   title: string;
   content: string;
   url: string;
-  date: string;
+  date?: string;
+  summary?: string;
+  publishedAt?: string;
+  source?: string;
+  createdAt?: string;
 }
 
 export interface Source {
-  title: string;
+  id: string;
+  title?: string;
   url: string;
-  date: string;
+  date?: string;
+  content?: string;
+  summary?: string;
+  source?: string;
+  publishedAt?: string;
+  createdAt?: string;
 }
 
 export interface AgentResponse {

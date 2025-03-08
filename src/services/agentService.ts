@@ -9,6 +9,7 @@ import {
   cleanAndStructureContent,
 } from "../utils/contentExtractor";
 import { logAgent, logError } from "../utils/logger";
+import { v4 as uuidv4 } from "uuid";
 
 const model = new ChatOpenAI({
   apiKey: config.openai.apiKey,
@@ -72,6 +73,7 @@ async function processUrlQuery(
       answer: response.content.toString(),
       sources: [
         {
+          id: uuidv4(),
           title: article.title,
           url: article.url,
           date: article.date,
@@ -159,5 +161,17 @@ export async function processQuery(query: string): Promise<AgentResponse> {
       answer: `I encountered an error while processing your query: ${error.message}. Please try again or rephrase your question.`,
       sources: [],
     };
+  }
+}
+
+export async function getAnswer(query: string): Promise<AgentResponse> {
+  logAgent(`Processing query: ${query}`);
+
+  const url = extractUrlFromQuery(query);
+
+  if (url) {
+    return processUrlQuery(url, query);
+  } else {
+    return processGeneralQuery(query);
   }
 }

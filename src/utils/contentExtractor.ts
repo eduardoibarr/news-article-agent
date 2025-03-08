@@ -92,8 +92,8 @@ export function extractTextFromHtml(html: string): string {
 }
 
 export async function cleanAndStructureContent(
-  url: string,
-  rawContent: string
+  rawContent: string,
+  url: string
 ): Promise<CleanedArticle> {
   const openai = new ChatOpenAI({
     apiKey: config.openai.apiKey,
@@ -108,56 +108,74 @@ export async function cleanAndStructureContent(
   Below is raw HTML content from a news article. Extract and structure the following information:
   1. The article title
   2. The main article content (cleaned and well-formatted)
-  3. The publication date (in YYYY-MM-DD format, if available)
+  3. A brief summary of the article (2-3 sentences)
   
-  Return the result in the following JSON format:
-  {
-    "title": "Article Title",
-    "content": "Cleaned article content...",
-    "date": "YYYY-MM-DD"
-  }
+  Format your response as JSON with the following fields:
+  - title: The article's title
+  - content: The cleaned article content
+  - summary: A brief summary of the article
   
-  If the date is not available, use ${currentDate}.
-  If the content is too long, summarize it while keeping the key information.
-  
-  Raw HTML Content:
-  ${rawContent}
+  Raw content:
+  ${rawContent.substring(0, 15000)} <!-- Truncate to avoid token limits -->
   `;
 
   try {
     const response = await openai.invoke(prompt);
     const responseText = response.content.toString();
 
-    let structuredContent;
+    const jsonStr =
+      responseText.match(/```json\n([\s\S]*?)\n```|({[\s\S]*})/)?.[1] ||
+      responseText;
+
+    let parsed;
     try {
-      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        structuredContent = JSON.parse(jsonMatch[0]);
-      } else {
-        throw new Error("Could not find JSON in the response");
-      }
-    } catch (parseError) {
-      logError(
-        "Content Extractor",
-        `Error parsing LLM response: ${parseError}`
+      parsed = JSON.parse(jsonStr.trim());
+    } catch (e) {
+      const titleMatch = responseText.match(/title[":]*\s*(.*?)[\n",]/i);
+      const contentMatch = responseText.match(
+        /content[":]*\s*([\s\S]*?)(\n\n|$)/i
+      );
+      const summaryMatch = responseText.match(
+        /summary[":]*\s*([\s\S]*?)(\n\n|$)/i
       );
 
-      structuredContent = {
-        title: "Unknown Title",
-        content: responseText.substring(0, 1000),
-        date: currentDate,
+      parsed = {
+        title: titleMatch ? titleMatch[1].trim() : "Untitled Article",
+        content: contentMatch
+          ? contentMatch[1].trim()
+          : rawContent.substring(0, 1000),
+        summary: summaryMatch ? summaryMatch[1].trim() : "No summary available",
       };
     }
 
+    const id = Math.random().toString(36).substring(2, 15);
+
     return {
-      title: structuredContent.title || "Unknown Title",
-      content: structuredContent.content || "No content extracted",
-      url: url,
-      date: structuredContent.date || currentDate,
+      id,
+      title: parsed.title || "Untitled Article",
+      content: parsed.content || rawContent.substring(0, 1000),
+      url,
+      summary: parsed.summary || "No summary available",
+      publishedAt: currentDate,
+      source: new URL(url).hostname,
+      createdAt: new Date().toISOString(),
     };
-  } catch (error) {
-    logError("Content Extractor", `Error cleaning content with LLM: ${error}`);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to clean and structure content: ${errorMessage}`);
+  } catch (error: unknown) {
+    logError("Content Extraction", error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logError("Failed to clean content", { error: errorMsg });
+
+    const id = Math.random().toString(36).substring(2, 15);
+
+    return {
+      id,
+      title: "Extraction Failed",
+      content: rawContent.substring(0, 5000),
+      url,
+      summary: "Content extraction failed",
+      publishedAt: currentDate,
+      source: new URL(url).hostname,
+      createdAt: new Date().toISOString(),
+    };
   }
 }
