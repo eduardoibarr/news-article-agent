@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { handleQuery } from "../controllers/agentController";
+import { handleQuery, handleSummarize } from "../controllers/agentController";
 
 const router = Router();
 
@@ -20,9 +20,20 @@ router.get("/", (req, res) => {
           "Summarize this article: https://www.bbc.com/news/world-us-canada-67809999",
         ],
       },
+      "/summarize": {
+        method: "POST",
+        description: "Summarize a specific article from URL",
+        requestBody: {
+          url: "String - URL of the article to summarize",
+        },
+      },
     },
   });
 });
+
+router.post("/agent", handleQuery);
+
+router.post("/summarize", handleSummarize);
 
 router.post("/", handleQuery);
 

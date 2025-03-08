@@ -18,6 +18,7 @@ async function startServer() {
   app.use(express.json());
   app.use(requestLogger);
 
+  app.use("/", agentRoutes);
   app.use("/agent", agentRoutes);
 
   const yogaServer = createYogaServer();
